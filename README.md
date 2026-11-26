@@ -17,21 +17,23 @@ built on, is described at <https://rive.app/docs/runtimes/data-binding>.
 
 ## Install
 
-npm publishing comes later. Until then, link a checkout, or install from GitHub once the repository is public.
+Install from GitHub, pinned to a release tag. npm publishing comes later.
 
 ```sh
-# From a checkout: register it once, then link it (a symlink; the package isn't copied)
-(cd path/to/exact-rive && bun link)
-bun add link:exact-rive
-
-# From GitHub, once the repository is public (Bun fetches GitHub's tarball, which a private repository refuses)
-bun add exact-rive@github:kaleb-dev/exact-rive
-
-# From npm, once it is published
-bun add exact-rive
+bun add exact-rive@github:kaleb-dev/exact-rive#v0.1.0
 ```
 
-Don't install a checkout with `file:`: Bun copies the whole folder, `example/` included.
+`bun.lock` then records the tarball's integrity hash. The tarball leaves out `example/` (`.gitattributes`).
+
+To work on the package beside an app, link a checkout instead. That is a symlink, so edits show up at once:
+
+```sh
+(cd path/to/exact-rive && bun link)
+bun add link:exact-rive
+```
+
+Don't install a checkout with `file:`: Bun copies the whole folder, `example/` included. Once the package is on npm,
+`bun add exact-rive` works too.
 
 The app must list `exact-rive` in its own `dependencies`; Exact links a package's native code only for a direct
 dependency. Then, for iOS, lock the Swift package and commit the lock:
@@ -167,13 +169,17 @@ already gives the box. `load` runs at the first drawn frame. `message` takes the
 
 ## Roadmap: `RiveUIView` on iOS
 
-The move to `RiveUIView` waits on one Exact capability: display-link views on the agent's virtual clock. Today
-`clock +N` doesn't move `RiveUIView`, so a test that waits for a trigger waits on the wall clock instead, and such
-tests ran slower and less reliably in our trials. Accessibility is not a blocker: a native view's own
-accessibility elements reach VoiceOver through Exact, and `RiveUIView` reads a file's label once, given a semantics
-node with bounds (above). Exact feedback 43fc3575 said otherwise; that point was wrong.
+The only thing keeping iOS on `RiveView` is the clock. `RiveUIView` runs its own display link on the wall clock, and
+Exact won't virtualize display links (expo/exact#1909, closed as not planned). Exact's agent steps only
+`context.frames` and `context.after`, so `clock +N` doesn't move `RiveUIView`, and a test that waits for one of its
+triggers waits on real time. The way forward is a documented way to pause `RiveUIView` and advance it by a delta
+from the host's clock, which is being asked of Rive.
 
-When Exact can step display links, or when Rive removes `RiveView`, only `apple/Player.swift` changes. It is the one file that touches
+Accessibility is not a blocker: a native view's own accessibility elements reach VoiceOver through Exact, and
+`RiveUIView` reads a file's label once, given a semantics node with bounds (above). Exact feedback 43fc3575 said
+otherwise; that point was wrong.
+
+When `RiveUIView` can be stepped, or when Rive removes `RiveView`, only `apple/Player.swift` changes. It is the one file that touches
 RiveRuntime; `apple/RiveModule.swift` (props, clock, pausing, events) stays as it is.
 
 ## Upgrading Rive
@@ -196,7 +202,7 @@ file's side.
 
 ```sh
 cd example
-(cd .. && bun link) && bun install          # links the package, never copies it
+(cd .. && bun link) && bun install          # the example links the package, never copies it
 bun exact.mjs test web
 bun exact.mjs lock && EXACT_SIM=<simulator udid> bun exact.mjs test ios
 ```

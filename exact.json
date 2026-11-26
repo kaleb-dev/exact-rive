@@ -3,6 +3,13 @@
   "name": "exact-rive",
   "version": "0.1.0",
   "substitute": "implementation",
+  "config": {
+    "web": {
+      "runtime": {
+        "type": "string"
+      }
+    }
+  },
   "shapes": {},
   "views": {
     "rive-view": {
@@ -18,7 +25,10 @@
         "fire": "option<string>",
         "opening": "option<string>"
       },
-      "events": ["load", "message"],
+      "events": [
+        "load",
+        "message"
+      ],
       "displayed": true
     }
   },

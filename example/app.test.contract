@@ -1,16 +1,17 @@
 // exact-rive's tests, on the web and the iOS simulator. assets/sample.riv answers each value it receives with a
 // trigger of its own, so every check reads the file's side. Time is the agent's clock: `clock +N` plays the file.
+// The web runtime arrives over the network on real time, so each test first waits for the view's first frame.
 
 test "the file loads and its first frame replaces the still"
   clock settle
   expect tree has "rive-view"
-  clock +100
+  clock until state loaded == 1 within 20000
   expect tree missing "rive-still"
   expect text "failed" == "no error"
 
 test "each property type reaches the file"
   clock settle
-  clock +100
+  clock until state loaded == 1 within 20000
   tap "level"
   clock +100
   expect text "last-trigger" == "trigger levelHigh (1)"
@@ -31,7 +32,7 @@ test "each property type reaches the file"
 
 test "a fired trigger plays and the file's own trigger and legacy event come back"
   clock settle
-  clock +100
+  clock until state loaded == 1 within 20000
   tap "bounce"
   clock +100
   expect text "last-event" == "event bounced {\"times\":1}"
@@ -41,7 +42,7 @@ test "a fired trigger plays and the file's own trigger and legacy event come bac
 
 test "a name the file lacks warns once and the rest still plays"
   clock settle
-  clock +100
+  clock until state loaded == 1 within 20000
   tap "misname"
   clock +100
   expect text "last-warn" == "warn assets/sample.riv: no view-model property \"nope\"; skipped (1)"
@@ -61,7 +62,7 @@ test "a file that can't load shows the still"
 
 test "hidden, the file pauses; shown again, it goes on"
   clock settle
-  clock +100
+  clock until state loaded == 1 within 20000
   tap "hide"
   tap "bounce"
   clock +1000

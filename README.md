@@ -7,8 +7,9 @@ hears what the file says back. A thin Contract component, `Rive`, adds the still
 - **iOS:** Rive's official runtime, [rive-ios](https://github.com/rive-app/rive-ios) 6.31.0, through Swift Package
   Manager.
 - **Web:** Rive's official low-level runtime,
-  [@rive-app/canvas-advanced](https://www.npmjs.com/package/@rive-app/canvas-advanced) 2.55.1. It loads lazily,
-  the first time a view mounts.
+  [@rive-app/canvas-advanced](https://www.npmjs.com/package/@rive-app/canvas-advanced) 2.55.1 (JS and wasm, about
+  1.03 MB gzipped). It is fetched only when the first view mounts: never on a page without one, and never under
+  reduced motion.
 - **Android:** not implemented yet. The view reports an error, so `Rive` shows its still.
 
 The Rive runtime docs are at <https://rive.app/docs/runtimes/getting-started>. Data binding, which this package is
@@ -16,18 +17,21 @@ built on, is described at <https://rive.app/docs/runtimes/data-binding>.
 
 ## Install
 
-npm publishing comes later. Until then, install from GitHub or from a path.
+npm publishing comes later. Until then, link a checkout, or install from GitHub once the repository is public.
 
 ```sh
-# From GitHub (a private repository needs your GitHub credentials in git)
-bun add github:kaleb-dev/exact-rive
+# From a checkout: register it once, then link it (a symlink; the package isn't copied)
+(cd path/to/exact-rive && bun link)
+bun add link:exact-rive
 
-# From a checkout beside your app: link it, so the package isn't copied
-(cd ../exact-rive && bun link) && bun add link:exact-rive
+# From GitHub, once the repository is public (Bun fetches GitHub's tarball, which a private repository refuses)
+bun add exact-rive@github:kaleb-dev/exact-rive
 
 # From npm, once it is published
 bun add exact-rive
 ```
+
+Don't install a checkout with `file:`: Bun copies the whole folder, `example/` included.
 
 The app must list `exact-rive` in its own `dependencies`; Exact links a package's native code only for a direct
 dependency. Then, for iOS, lock the Swift package and commit the lock:
@@ -37,6 +41,27 @@ bun exact.mjs lock   # writes Package.resolved with rive-ios 6.31.0
 ```
 
 No `app.json` entry is needed. The package declares its view, and Exact builds its Swift and bundles its web code.
+
+### The web runtime: jsDelivr or your own copy
+
+By default the web runtime comes from jsDelivr, pinned to the npm release:
+`https://cdn.jsdelivr.net/npm/@rive-app/canvas-advanced@2.55.1/canvas_advanced.mjs`, with `rive.wasm` beside it.
+It is fetched when the first view mounts, not bundled: Exact's page preloads every chunk of its bundle as it
+starts, so a bundled runtime would be downloaded by every page.
+
+To serve it yourself (offline, no third-party request), copy the package's `web/rive/` (`canvas_advanced.js` and
+`rive.wasm`, unchanged from npm) into a folder the web build serves, and name the JS file in `app.json`. An app's
+`modules/web/` is served at `/modules/` on the web only, so the files don't ship in the iOS app:
+
+```sh
+mkdir -p modules/web/rive && cp node_modules/exact-rive/web/rive/* modules/web/rive/
+```
+
+```json
+"packages": { "exact-rive": { "web": { "runtime": "modules/rive/canvas_advanced.js" } } }
+```
+
+The path is relative to the page. The wasm is always read from beside the JS file.
 
 ## Usage
 
@@ -87,6 +112,7 @@ Every message is a string with a prefix, so a name can't be misread:
 
 | Message | When |
 |---|---|
+| `load` | Rive drew its first frame (`Rive` only; on the tag it is the `load` event). |
 | `trigger:<name>` | The file fired a view-model trigger of its own (a reaction finished). Triggers the app fired are not echoed back. |
 | `event:<name> <JSON>` | The file reported a legacy Rive event; the JSON holds its custom properties, when it has any. |
 | `label:<text>` | The file's semantics labels changed (web only; see Limitations). |
@@ -124,15 +150,16 @@ already gives the box. `load` runs at the first drawn frame. `message` takes the
   display link, and Exact can't step that yet.
 - **On iOS, VoiceOver reads `label`, not the file's own semantics.** `RiveView` has no accessibility semantics. Pass
   the words the file's label would say, and iOS and the web read the same.
-- **The web runtime is the single-file build**, with its wasm inlined: about 3.4 MB (about 1.3 MB gzipped), against
-  2.5 MB (1.03 MB) for the JS and wasm as two files. Exact bundles a package's web code but serves no file beside
-  it for a views-only package. It is fetched only when a view mounts, never under reduced motion.
+- **The default web runtime is a third-party request** to jsDelivr. Self-host it (above) to avoid that.
 - **iOS pauses when hidden or out of its window,** but keeps drawing while scrolled out of sight inside a visible
   scroller, if Exact still reports the view displayed.
 - **Android** isn't implemented: the view reports `error:` and the still shows. **macOS** isn't built
   (the Apple implementation targets iOS only).
 - **Assets on iOS** come from the app bundle, so a `.riv` changed by an over-the-air update isn't seen until the next
-  binary. URLs load at run time on both platforms.
+  binary.
+- **Written but not yet exercised** by a test or an app: an `https:` source, a named `viewModel`, a file with no view
+  model, fit and alignment other than contain and center (`layout` on iOS doesn't resize the artboard), and the
+  Android scaffold, which has never been compiled.
 
 ## Roadmap: `RiveUIView` on iOS
 
@@ -152,9 +179,9 @@ The runtime versions are pinned in two places. Upgrade both together and run bot
 
 - **iOS:** `exactVersion` in `apple/exact.json`. Then in each app, `bun exact.mjs lock` and commit the new
   `Package.resolved`.
-- **Web:** replace `web/rive/canvas_advanced_single.mjs` with the same file from
-  `npm pack @rive-app/canvas-advanced-single@<version>`, unchanged, and update the version in this README.
-  The file must match `@rive-app/canvas-advanced`'s API at that version.
+- **Web:** the version in `RUNTIME` in `web/index.js`, and the two files in `web/rive/` from
+  `npm pack @rive-app/canvas-advanced@<version>` (`canvas_advanced.mjs`, renamed `.js` because Exact's dev server serves only `.js` under `/modules/`, and
+  `rive.wasm`, otherwise unchanged). Apps that self-host copy the new files again.
 
 ## The example and its tests
 
@@ -171,7 +198,7 @@ bun exact.mjs test web
 bun exact.mjs lock && EXACT_SIM=<simulator udid> bun exact.mjs test ios
 ```
 
-The tests cover loading, each property type (with an escaped string), a trigger and its round trip, a legacy
+The web tests fetch the runtime from jsDelivr, so they need the network. The tests cover loading, each property type (with an escaped string), a trigger and its round trip, a legacy
 event, a missing name's warning, a file that can't load, hiding, and reduced motion.
 
 The example uses the Exact checkout at `example/.exact/checkout` (`EXACT=<checkout>` overrides it).
@@ -179,6 +206,6 @@ The example uses the Exact checkout at `example/.exact/checkout` (`EXACT=<checko
 ## Credits and licences
 
 exact-rive is MIT licensed (see `LICENSE`). It ships Rive's runtimes, which are MIT licensed by Rive:
-`licenses/rive-wasm-LICENSE.txt` covers the vendored web runtime, and `licenses/rive-ios-LICENSE.txt` covers
+`licenses/rive-wasm-LICENSE.txt` covers the web runtime (vendored in `web/rive/`, or fetched from jsDelivr), and `licenses/rive-ios-LICENSE.txt` covers
 rive-ios, which Swift Package Manager fetches. The example's font is Nunito, under the SIL Open Font License
 (`licenses/Nunito-OFL.txt`).

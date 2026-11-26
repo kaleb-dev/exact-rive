@@ -1,6 +1,6 @@
 // exact-rive on the web: `rive-view`, a Rive file's state machine on a canvas, with the same props and messages as
 // apple/RiveModule.swift. Rive's official low-level web runtime, @rive-app/canvas-advanced (MIT), is vendored
-// unchanged in ./rive/ (its single-file build) and loads when the first view mounts, never at import.
+// unchanged in ./rive/ (for apps that serve it themselves) and loads when the first view mounts, never at import.
 //
 // Time is Exact's: each frame advances the machine by the session clock's `now()` (the agent's virtual clock under
 // the agent), in steps of at most 1/60 s, so a `clock +1500` plays every transition and reports every trigger in
@@ -9,14 +9,19 @@
 
 const STRING = 'string', NUMBER = 'number', BOOLEAN = 'boolean', COLOR = 'color', ENUM = 'enumType', TRIGGER = 'trigger';
 const STEP = 1 / 60;
+// Rive's runtime is fetched from a URL only when the first view mounts. A bundled `import('./rive/…')` would be a
+// chunk, and Exact's page preloads every chunk as it starts, so every page would download it. The default is the
+// pinned npm release on jsDelivr; an app serves its own copy of ./rive/ (README, "Self-hosting the web runtime") by
+// naming its JS file in app.json: "packages": {"exact-rive": {"web": {"runtime": "modules/rive/canvas_advanced.js"}}}.
+// The wasm is read from beside the JS file.
+const RUNTIME = 'https://cdn.jsdelivr.net/npm/@rive-app/canvas-advanced@2.55.1/canvas_advanced.mjs';
 let runtime = null;
 
-function rive() {
-  // ponytail: the single-file build, wasm inlined as base64 (3.4 MB, ~1.3 MB gzipped, vs 2.5 MB / 1.03 MB split):
-  // Exact bundles a package's web code but serves no file beside it for a views-only package. Split again if Exact
-  // emits `new URL(…, import.meta.url)` assets (README, "Upgrading Rive").
-  return runtime ??= import('./rive/canvas_advanced_single.mjs').then(({ default: init }) => init())
-    .catch((e) => { runtime = null; throw e; });
+function rive(config) {
+  const url = new URL(config.runtime || RUNTIME, document.baseURI).href;
+  return runtime ??= import(/* @vite-ignore */ url)
+    .then(({ default: init }) => init({ locateFile: () => new URL('rive.wasm', url).href }))
+    .catch((e) => { runtime = null; throw new Error(`the Rive runtime (${url}) did not load: ${e?.message ?? e}`); });
 }
 
 const decode = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
@@ -61,7 +66,7 @@ class RiveView {
   async load(key) {
     this.free();
     const { source = '', artboard = '', stateMachine = '', viewModel = '', instance = '' } = this.props;
-    const r = await rive();
+    const r = await rive(this.impl.config);
     const bytes = await fetch(new URL(source, document.baseURI)).then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); });
     const f = await r.load(new Uint8Array(bytes));
     if (key !== this.key || this.gone) return f.unref();
@@ -218,10 +223,10 @@ class RiveView {
 
 export const roster = { 'rive-view': { view: RiveView } };
 
-export function implementation({ now = () => performance.now() }) {
+export function implementation({ now = () => performance.now(), config = {} }) {
   const views = new Map(), hidden = new Set();
   return {
-    views, hidden, now,
+    views, hidden, now, config,
     displayed(view, shown) {
       if (shown) hidden.delete(view); else hidden.add(view);
       views.get(view)?.wake();

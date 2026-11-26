@@ -35,7 +35,7 @@ component Rive
     still: string
     // "still" (the default for "") shows the still under reduced motion; "play" plays the file anyway.
     reducedMotion: string
-    // Every message: "trigger:<name>" for a trigger the file fired, "event:<name> <properties JSON>" for a legacy Rive
+    // Every message: "load" at the first drawn frame, "trigger:<name>" for a trigger the file fired, "event:<name> <properties JSON>" for a legacy Rive
     // event, "label:<text>" (web), "warn:<why>" for a name the file lacks, "error:<why>" when it can't load.
     heard: action
   slot
@@ -46,6 +46,7 @@ component Rive
   derive animated = source != "" and not failed and (reducedMotion == "play" or not motion.prefersReducedMotion)
   action drawn
     ready = true
+    heard("load")
   action message(m: string)
     if m.startsWith("error:")
       failed = true

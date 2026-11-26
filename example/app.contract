@@ -29,6 +29,8 @@ component Example
   state label = ""
   derive values = `level=${level};on=${on ? "true" : "false"};title=${encodeURIComponent(title)};tint=${tint};mood=${mood}${extra}`
   action heard(m: string)
+    if m == "load"
+      loaded = loaded + 1
     if m.startsWith("trigger:")
       lastTrigger = m.slice(8)
       triggers = triggers + 1

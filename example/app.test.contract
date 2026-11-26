@@ -76,3 +76,9 @@ test "under reduced motion the still shows and no Rive view is made"
   clock settle
   expect tree missing "rive-view"
   expect tree has "rive-still"
+
+// Web only: iOS's RiveView has no semantics, so there the view reads the `label` prop (README, "Limitations").
+test "the file's own semantics label names the view" on web
+  clock settle
+  clock until state loaded == 1 within 20000
+  expect text "label" == "label Sample, a test file"

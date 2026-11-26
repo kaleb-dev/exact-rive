@@ -146,10 +146,14 @@ already gives the box. `load` runs at the first drawn frame. `message` takes the
 
 - **iOS uses rive-ios's legacy `RiveView`.** `RiveView` and its data-binding API are marked deprecated in
   RiveRuntime 6.31, in favour of the newer concurrency runtime and its `RiveUIView`. They still work. The package
-  stays on `RiveView` because Exact's clock can step it, which makes tests repeatable. `RiveUIView` runs its own
-  display link, and Exact can't step that yet.
-- **On iOS, VoiceOver reads `label`, not the file's own semantics.** `RiveView` has no accessibility semantics. Pass
-  the words the file's label would say, and iOS and the web read the same.
+  stays on `RiveView` for one reason: Exact's clock can step it, so tests are repeatable. `RiveUIView` runs its own
+  display link on the wall clock, which Exact's virtual clock can't move yet.
+- **On iOS, VoiceOver reads `label`, not the file's own semantics.** `RiveView` has no accessibility semantics.
+  `RiveUIView` has them, and they reach VoiceOver through Exact today. Until the move, pass the words the file's
+  label says, and iOS and the web read the same.
+- **Give a semantics node real bounds.** Put `SemanticData` on a drawable (a shape or text), not on an empty node:
+  an empty node has no bounds, rive-ios gives it an infinite frame, and UIKit leaves it out, so VoiceOver would
+  read nothing once the package moves to `RiveUIView`. The web reads such a label either way.
 - **The default web runtime is a third-party request** to jsDelivr. Self-host it (above) to avoid that.
 - **iOS pauses when hidden or out of its window,** but keeps drawing while scrolled out of sight inside a visible
   scroller, if Exact still reports the view displayed.
@@ -163,14 +167,13 @@ already gives the box. `load` runs at the first drawn frame. `message` takes the
 
 ## Roadmap: `RiveUIView` on iOS
 
-The move to `RiveUIView` waits on two Exact changes, sent as Exact feedback 43fc3575:
+The move to `RiveUIView` waits on one Exact capability: display-link views on the agent's virtual clock. Today
+`clock +N` doesn't move `RiveUIView`, so a test that waits for a trigger waits on the wall clock instead, and such
+tests ran slower and less reliably in our trials. Accessibility is not a blocker: a native view's own
+accessibility elements reach VoiceOver through Exact, and `RiveUIView` reads a file's label once, given a semantics
+node with bounds (above). Exact feedback 43fc3575 said otherwise; that point was wrong.
 
-1. A native view's own accessibility elements reaching VoiceOver. Today `RiveUIView` builds the file's elements,
-   but Exact's native-view box doesn't pass them on.
-2. Display-link views on the agent's virtual clock. Today `clock +N` doesn't move `RiveUIView`, so tests that wait
-   for a trigger would wait on the wall clock.
-
-When both ship, or when Rive removes `RiveView`, only `apple/Player.swift` changes. It is the one file that touches
+When Exact can step display links, or when Rive removes `RiveView`, only `apple/Player.swift` changes. It is the one file that touches
 RiveRuntime; `apple/RiveModule.swift` (props, clock, pausing, events) stays as it is.
 
 ## Upgrading Rive

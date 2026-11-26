@@ -1,6 +1,5 @@
 <Rive version="1" kind="fragment">
   <Artboard viewModelId="0:40" viewModelInstanceId="0:70" defaultStateMachineId="0:100" width="600" height="600" name="Sample" id="0:2">
-    <Node x="300" y="300" name="Who" id="0:3"><SemanticData role="image" label="Sample, a test file" name="Semantics"/></Node>
     <Text x="300" y="170" originX="0.5" name="Row level" id="0:200">
       <TextStylePaint fontSize="40" fontAssetId="0:30" name="Style" id="0:201"><Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="C"/></Fill></TextStylePaint>
       <TextValueRun styleId="0:201" text="level " name="Label"/>
@@ -22,6 +21,7 @@
       <TextValueRun styleId="0:210" text="?" name="Value"><DataBindContext sourcePathIds="0:40-0:45" propertyKey="268" converterId="0:90"/></TextValueRun>
     </Text>
     <Shape x="300" y="300" name="Disc" id="0:10">
+      <SemanticData role="image" label="Sample, a test file" name="Semantics"/>
       <Ellipse width="560" height="560" originX="0.5" originY="0.5" name="Path"/>
       <Fill name="Fill"><SolidColor colorValue="FF0B5454" name="C"><DataBindContext sourcePathIds="0:40-0:44" propertyKey="37"/></SolidColor></Fill>
     </Shape>
@@ -63,7 +63,7 @@
     </StateMachine>
     <LinearAnimation duration="1" name="rest" id="0:120"><KeyedObject objectId="0:10"><KeyedProperty property="scaleX"><KeyFrameDouble value="1"/></KeyedProperty></KeyedObject></LinearAnimation>
     <LinearAnimation duration="30" name="bounce" id="0:121"><KeyedObject objectId="0:10"><KeyedProperty property="scaleY"><KeyFrameDouble value="1" interpolationType="linear"/><KeyFrameDouble value="0.85" frame="15" interpolationType="linear"/><KeyFrameDouble value="1" frame="30"/></KeyedProperty></KeyedObject></LinearAnimation>
-    <LinearAnimation duration="1" name="hold" id="0:122"><KeyedObject objectId="0:3"><KeyedProperty property="x"><KeyFrameDouble value="300"/></KeyedProperty></KeyedObject></LinearAnimation>
+    <LinearAnimation duration="1" name="hold" id="0:122"><KeyedObject objectId="0:10"><KeyedProperty property="x"><KeyFrameDouble value="300"/></KeyedProperty></KeyedObject></LinearAnimation>
     <Event name="bounced" id="0:80"><CustomPropertyNumber propertyValue="1" name="times"/></Event>
   </Artboard>
   <FontAsset file="Nunito-700.ttf" name="Nunito" id="0:30"/>

@@ -1,0 +1,34 @@
+{
+  "name": "exact-rive",
+  "version": "0.1.0",
+  "description": "Rive for Exact apps: a `rive-view` native view on iOS and the web, driven from Contract by data binding.",
+  "license": "MIT",
+  "author": "Kaleb Tessema",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaleb-dev/exact-rive.git"
+  },
+  "keywords": [
+    "exact",
+    "rive",
+    "animation",
+    "contract"
+  ],
+  "files": [
+    "exact.json",
+    "rive.contract",
+    "apple",
+    "web",
+    "android",
+    "licenses",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./exact.json",
+    "./apple": "./apple/exact.json",
+    "./android": "./android/exact.json",
+    "./web": "./web/exact.json",
+    "./contract": "./rive.contract"
+  }
+}

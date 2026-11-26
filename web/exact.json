@@ -1,0 +1,13 @@
+{
+  "kind": "implementation",
+  "implements": "exact-rive@^0.1",
+  "platform": "web",
+  "targets": ["web"],
+  "shapes": {},
+  "options": {},
+  "names": [],
+  "views": ["rive-view"],
+  "hatches": [],
+  "sources": { "javascript": ["index.js"] },
+  "artifacts": []
+}

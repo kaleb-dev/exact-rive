@@ -1,0 +1,17 @@
+{
+  "kind": "implementation",
+  "implements": "exact-rive@^0.1",
+  "platform": "apple",
+  "targets": ["ios"],
+  "shapes": {},
+  "options": {},
+  "names": [],
+  "views": ["rive-view"],
+  "hatches": [],
+  "sources": { "swift": ["RiveModule.swift", "Player.swift"] },
+  "swiftPackages": [
+    { "url": "https://github.com/rive-app/rive-ios", "exactVersion": "6.31.0", "products": ["RiveRuntime"] }
+  ],
+  "artifacts": [],
+  "class": "RiveModule"
+}

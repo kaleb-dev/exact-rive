@@ -1,0 +1,64 @@
+// exact-rive's Contract side: `Rive`, which places the `rive-view` native view with its still fallback and its
+// reduced-motion rule. Apps import it with `use Rive from "exact-rive/contract"` and usually wrap it once in a
+// component of their own that names their file's properties (README, "Usage").
+
+shape RiveMotion
+  prefersReducedMotion: bool
+
+// A Rive file's state machine, filling its parent's box.
+// Under reduced motion (unless `reducedMotion` is "play"), when the file can't load, and until Rive's first frame,
+// the still shows instead: `still` (an image path, or "") over the component's children. Under reduced motion the
+// native view is never made, so no Rive runtime loads.
+component Rive
+  props
+    // An `assets/` path or an https URL of a .riv file.
+    source: string
+    // "" for the file's default artboard, its first state machine, the artboard's view model, its default instance.
+    artboard: string
+    stateMachine: string
+    viewModel: string
+    instance: string
+    // Rive's fit (contain, cover, fill, fitWidth, fitHeight, none, scaleDown, layout) and alignment (center,
+    // topLeft, topCenter, topRight, centerLeft, centerRight, bottomLeft, bottomCenter, bottomRight); "" is the default.
+    fit: string
+    alignment: string
+    // "name=value;…": the view model's number, boolean, string, colour (#rrggbb or #rrggbbaa) and enum properties.
+    // Percent-encode `;`, `=` and `%` inside a value (%3B, %3D, %25).
+    values: string
+    // "name=count;…": a trigger fires each time its count changes, never for the count the view mounts with.
+    fire: string
+    // A trigger to fire once, at the first frame, else "".
+    opening: string
+    // What a screen reader says for the view. The web uses the file's own semantics label when it has one.
+    label: string
+    // An image shown in place of the animation, else "". Children show there too.
+    still: string
+    // "still" (the default for "") shows the still under reduced motion; "play" plays the file anyway.
+    reducedMotion: string
+    // Every message: "trigger:<name>" for a trigger the file fired, "event:<name> <properties JSON>" for a legacy Rive
+    // event, "label:<text>" (web), "warn:<why>" for a name the file lacks, "error:<why>" when it can't load.
+    heard: action
+  slot
+  resource motion = exactViewport() as shape RiveMotion
+  state ready = false
+  state failed = false
+  state said = ""
+  derive animated = source != "" and not failed and (reducedMotion == "play" or not motion.prefersReducedMotion)
+  action drawn
+    ready = true
+  action message(m: string)
+    if m.startsWith("error:")
+      failed = true
+    if m.startsWith("label:")
+      said = m.slice(6)
+    heard(m)
+  view
+    column position="relative" width="100%" height="100%" testId="rive"
+      if animated
+        rive-view source=source artboard=artboard stateMachine=stateMachine viewModel=viewModel instance=instance fitMode=fit alignment=alignment values=values fire=fire opening=opening load=drawn message=message position="absolute" inset=0 role="img" aria-label=(said != "" ? said : label) testId="rive-view"
+      if not animated or not ready
+        // While Rive loads the still is decoration: the view's label is the one a screen reader reads.
+        column position="absolute" inset=0 align-items="center" justify-content="center" aria-hidden=animated testId="rive-still"
+          if still != ""
+            image still alt=label width="100%" height="100%" object-fit="contain"
+          children

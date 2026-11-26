@@ -1,0 +1,99 @@
+// exact-rive's example: one Rive file (assets/sample.riv, built from rive-src/) driven through every property type,
+// its trigger round trip, its warnings, a file that can't load, hiding, and reduced motion. The file answers each
+// value it receives with a trigger of its own (levelHigh, onSet, titleSet, tintRed, moodHappy), so the tests check
+// from the file's side that the value arrived.
+use Rive from "exact-rive/contract"
+
+routes nav
+  home "/"
+
+component Example
+  // Which file plays: "sample", or "broken" (bytes that aren't a Rive file).
+  state which = "sample"
+  state level = 1
+  state on = false
+  state title = "hi"
+  state tint = "#0B5454"
+  state mood = "calm"
+  // A name the file lacks, sent with the values when set.
+  state extra = ""
+  state bounces = 0
+  state hidden = false
+  state loaded = 0
+  state lastTrigger = ""
+  state triggers = 0
+  state lastEvent = ""
+  state lastWarn = ""
+  state warnings = 0
+  state lastError = ""
+  state label = ""
+  derive values = `level=${level};on=${on ? "true" : "false"};title=${encodeURIComponent(title)};tint=${tint};mood=${mood}${extra}`
+  action heard(m: string)
+    if m.startsWith("trigger:")
+      lastTrigger = m.slice(8)
+      triggers = triggers + 1
+    if m.startsWith("event:")
+      lastEvent = m.slice(6)
+    if m.startsWith("warn:")
+      lastWarn = m.slice(5)
+      warnings = warnings + 1
+    if m.startsWith("error:")
+      lastError = m.slice(6)
+    if m.startsWith("label:")
+      label = m.slice(6)
+  action raise
+    level = level >= 5 ? 1 : 5
+  action toggle
+    on = not on
+  action greet
+    title = title == "a;b=c" ? "hi" : "a;b=c"
+  action redden
+    tint = tint == "#FF0000" ? "#0B5454" : "#FF0000"
+  action cheer
+    mood = mood == "happy" ? "calm" : "happy"
+  action misname
+    extra = ";nope=1"
+  action bounce
+    bounces = bounces + 1
+  action hide
+    hidden = not hidden
+  action show(w: string)
+    which = w
+  view
+    main testId="root" navigationKey=`${top(nav).id}` width="100%" height="100%"
+      for e in stack(nav) key=e.id
+        column navigationKey=`${e.id}` navigationScroll="content" position="absolute" inset=0 display="flex" flex-direction="column"
+          header display="flex" align-items="center"
+            text "exact-rive" role="heading" aria-level=1 flex=1
+          scroll id="content" flex=1 min-height=0 padding=16
+            column gap=12 align-items="center"
+              column width=240 height=240 display=(hidden ? "none" : "flex") testId="stage"
+                if which == "sample"
+                  Rive(source="assets/sample.riv", artboard="", stateMachine="", viewModel="", instance="", fit="contain", alignment="center", values=values, fire=`bounce=${bounces}`, opening="", label="A sample Rive file", still="assets/still.png", reducedMotion="still", heard=heard)
+                else
+                  Rive(source="assets/broken.riv", artboard="", stateMachine="", viewModel="", instance="", fit="", alignment="", values="", fire="", opening="", label="A file that can't load", still="assets/still.png", reducedMotion="still", heard=heard)
+              row gap=8 flex-wrap="wrap" justify-content="center"
+                button press=raise testId="level"
+                  text `Level ${level}`
+                button press=toggle testId="on"
+                  text (on ? "Off" : "On")
+                button press=greet testId="title"
+                  text "Title"
+                button press=redden testId="tint"
+                  text "Tint"
+                button press=cheer testId="mood"
+                  text `Mood ${mood}`
+                button press=bounce testId="bounce"
+                  text "Bounce"
+                button press=misname testId="misname"
+                  text "Misname"
+                button press=hide testId="hide"
+                  text (hidden ? "Show" : "Hide")
+                button press=show(which == "sample" ? "broken" : "sample") testId="swap"
+                  text (which == "sample" ? "Broken file" : "Sample file")
+              text `trigger ${lastTrigger} (${triggers})` testId="last-trigger"
+              text `event ${lastEvent}` testId="last-event"
+              text `warn ${lastWarn} (${warnings})` testId="last-warn"
+              text `error ${lastError}` testId="last-error"
+              text (lastError != "" ? "failed" : "no error") testId="failed"
+              text `label ${label}` testId="label"

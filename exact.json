@@ -1,0 +1,26 @@
+{
+  "kind": "interface",
+  "name": "exact-rive",
+  "version": "0.1.0",
+  "substitute": "implementation",
+  "shapes": {},
+  "views": {
+    "rive-view": {
+      "props": {
+        "source": "string",
+        "artboard": "option<string>",
+        "stateMachine": "option<string>",
+        "viewModel": "option<string>",
+        "instance": "option<string>",
+        "fitMode": "option<string>",
+        "alignment": "option<string>",
+        "values": "option<string>",
+        "fire": "option<string>",
+        "opening": "option<string>"
+      },
+      "events": ["load", "message"],
+      "displayed": true
+    }
+  },
+  "names": []
+}

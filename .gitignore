@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+example/target/
+example/dist/
+example/.exact/
+example/app.contract.d.ts
+*.log

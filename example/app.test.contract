@@ -1,0 +1,77 @@
+// exact-rive's tests, on the web and the iOS simulator. assets/sample.riv answers each value it receives with a
+// trigger of its own, so every check reads the file's side. Time is the agent's clock: `clock +N` plays the file.
+
+test "the file loads and its first frame replaces the still"
+  clock settle
+  expect tree has "rive-view"
+  clock +100
+  expect tree missing "rive-still"
+  expect text "failed" == "no error"
+
+test "each property type reaches the file"
+  clock settle
+  clock +100
+  tap "level"
+  clock +100
+  expect text "last-trigger" == "trigger levelHigh (1)"
+  tap "on"
+  clock +100
+  expect text "last-trigger" == "trigger onSet (2)"
+  // The string carries `;` and `=`, percent-encoded on the way in.
+  tap "title"
+  clock +100
+  expect text "last-trigger" == "trigger titleSet (3)"
+  tap "tint"
+  clock +100
+  expect text "last-trigger" == "trigger tintRed (4)"
+  tap "mood"
+  clock +100
+  expect text "last-trigger" == "trigger moodHappy (5)"
+  expect text "last-warn" == "warn  (0)"
+
+test "a fired trigger plays and the file's own trigger and legacy event come back"
+  clock settle
+  clock +100
+  tap "bounce"
+  clock +100
+  expect text "last-event" == "event bounced {\"times\":1}"
+  expect text "last-trigger" == "trigger  (0)"
+  clock +500
+  expect text "last-trigger" == "trigger bounceDone (1)"
+
+test "a name the file lacks warns once and the rest still plays"
+  clock settle
+  clock +100
+  tap "misname"
+  clock +100
+  expect text "last-warn" == "warn assets/sample.riv: no view-model property \"nope\"; skipped (1)"
+  tap "level"
+  clock +100
+  expect text "last-warn" == "warn assets/sample.riv: no view-model property \"nope\"; skipped (1)"
+  expect text "last-trigger" == "trigger levelHigh (1)"
+
+test "a file that can't load shows the still"
+  clock settle
+  tap "swap"
+  clock data
+  clock settle
+  expect tree missing "rive-view"
+  expect tree has "rive-still"
+  expect text "failed" == "failed"
+
+test "hidden, the file pauses; shown again, it goes on"
+  clock settle
+  clock +100
+  tap "hide"
+  tap "bounce"
+  clock +1000
+  expect text "last-trigger" == "trigger  (0)"
+  tap "hide"
+  clock +1000
+  expect text "last-trigger" == "trigger bounceDone (1)"
+
+test "under reduced motion the still shows and no Rive view is made"
+  prefer prefers-reduced-motion reduce
+  clock settle
+  expect tree missing "rive-view"
+  expect tree has "rive-still"

@@ -1,0 +1,14 @@
+{
+  "kind": "implementation",
+  "implements": "exact-rive@^0.1",
+  "platform": "android",
+  "targets": ["android"],
+  "shapes": {},
+  "options": {},
+  "names": [],
+  "views": ["rive-view"],
+  "hatches": [],
+  "sources": { "kotlin": ["."] },
+  "artifacts": [],
+  "class": "exactrive.RiveModule"
+}

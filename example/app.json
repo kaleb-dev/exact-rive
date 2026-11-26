@@ -1,20 +1,28 @@
 {
   "$schema": ".exact/checkout/scripts/app.schema.json",
-  "name": "Example",
-  "short_name": "Example",
-  "id": "com.example.example-266607",
+  "name": "exact-rive",
+  "short_name": "exact-rive",
+  "id": "dev.exactrive.example",
   "start_url": "/",
   "display": "standalone",
   "app": {
-    "id": "com.example.example-266607",
-    "name": "Example"
+    "id": "dev.exactrive.example",
+    "name": "exact-rive"
   },
   "host": {
-    "web": {}
+    "web": {},
+    "ios": {
+      "minimumOS": "17.0",
+      "deviceFamily": [
+        "iphone",
+        "ipad"
+      ]
+    }
   },
   "deploy": {
     "store": {
-      "web": "0"
+      "web": "0",
+      "ios": "0"
     }
   }
 }
